@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import android.bluetooth.BluetoothDevice
+import androidx.compose.ui.unit.sp
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -22,11 +23,19 @@ fun DeviceItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onItemClick() }
-            .padding(16.dp)
+            .padding(10.dp)
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = device.name ?: "Unnamed Device", style = MaterialTheme.typography.bodyMedium)
-            Text(text = device.address ?: "Unknown Address", style = MaterialTheme.typography.bodySmall)
+//            Text(text = device.name ?: "Unnamed Device", style = MaterialTheme.typography.bodyMedium)
+//            Text(text = device.address ?: "Unknown Address", style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = device.name ?: "Unnamed Device",
+                fontSize = 18.sp // Manually set font size for device name
+            )
+            Text(
+                text = device.address ?: "Unknown Address",
+                fontSize = 16.sp // Manually set font size for MAC address
+            )
         }
         Button(
             onClick = {
