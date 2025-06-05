@@ -14,9 +14,10 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
     val connectedDevice = mutableStateOf<BluetoothDevice?>(null)
     val gattServices = mutableStateOf<List<BluetoothGattService>>(emptyList())
     private val scanCallback = object : ScanCallback() {
+        @SuppressLint("MissingPermission")
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val device = result.device
-            if (!scannedDevices.any { it.address == device.address }) {
+            if (!device.name.isNullOrEmpty() && !scannedDevices.any { it.address == device.address }) {
                 scannedDevices.add(device)
             }
         }
