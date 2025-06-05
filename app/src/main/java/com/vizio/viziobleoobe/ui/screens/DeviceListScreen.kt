@@ -1,12 +1,14 @@
 package com.vizio.viziobleoobe.ui.screens
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.vizio.viziobleoobe.ble.BleViewModel
 import com.vizio.viziobleoobe.navigation.Screen
@@ -18,6 +20,7 @@ import com.vizio.viziobleoobe.util.PermissionsUtil
 @Composable
 fun DeviceListScreen(viewModel: BleViewModel, navController: NavHostController) {
     val devices = viewModel.scannedDevices
+    val connectedDevice = viewModel.connectedDevice.value
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
@@ -36,10 +39,20 @@ fun DeviceListScreen(viewModel: BleViewModel, navController: NavHostController) 
         LazyColumn(modifier = Modifier.padding(padding)) {
             items(devices.size) { index ->
                 val device = devices[index]
-                DeviceItem(device = device, onClick = {
-                    viewModel.connectToDevice(device)
-                    navController.navigate(Screen.DeviceDetail.route)
-                })
+                DeviceItem(
+                    device = device,
+                    isConnected = connectedDevice?.address == device.address,
+                    onConnect = {
+                        viewModel.connectToDevice(device)
+                        navController.navigate(Screen.DeviceDetail.route)
+                    },
+                    onDisconnect = {
+                        viewModel.disconnectFromDevice()
+                    }
+                )
+
+                Divider(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp))
+
             }
         }
     }
