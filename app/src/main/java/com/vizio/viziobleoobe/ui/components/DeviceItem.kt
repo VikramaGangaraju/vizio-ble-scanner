@@ -15,11 +15,13 @@ fun DeviceItem(
     device: BluetoothDevice,
     isConnected: Boolean,
     onConnect: () -> Unit,
-    onDisconnect: () -> Unit
+    onDisconnect: () -> Unit,
+    onItemClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onItemClick() }
             .padding(16.dp)
     ) {
         Column(modifier = Modifier.weight(1f)) {

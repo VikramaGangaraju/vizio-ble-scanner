@@ -48,11 +48,15 @@ fun DeviceListScreen(viewModel: BleViewModel, navController: NavHostController) 
                     },
                     onDisconnect = {
                         viewModel.disconnectFromDevice()
+                    },
+                    onItemClick = {
+                        if (connectedDevice?.address == device.address) {
+                            navController.navigate(Screen.DeviceDetail.route)
+                        }
                     }
                 )
 
                 Divider(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp))
-
             }
         }
     }
