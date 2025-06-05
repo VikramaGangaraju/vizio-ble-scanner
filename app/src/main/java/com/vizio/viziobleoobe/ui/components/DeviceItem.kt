@@ -8,6 +8,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import android.bluetooth.BluetoothDevice
+import androidx.compose.material3.MaterialTheme
+
 @SuppressLint("MissingPermission")
 @Composable
 fun DeviceItem(device: BluetoothDevice, onClick: () -> Unit) {
@@ -17,6 +19,9 @@ fun DeviceItem(device: BluetoothDevice, onClick: () -> Unit) {
             .clickable { onClick() }
             .padding(16.dp)
     ) {
-        Text(text = device.name ?: "Unnamed Device")
+        Column {
+            Text(text = device.name ?: "Unnamed Device")
+            Text(text = device.address ?: "Unknown Address", style = MaterialTheme.typography.bodySmall)
+        }
     }
 }
