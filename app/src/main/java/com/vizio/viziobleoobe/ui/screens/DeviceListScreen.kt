@@ -1,14 +1,17 @@
 package com.vizio.viziobleoobe.ui.screens
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.vizio.viziobleoobe.ble.BleViewModel
 import com.vizio.viziobleoobe.navigation.Screen
@@ -22,6 +25,7 @@ fun DeviceListScreen(viewModel: BleViewModel, navController: NavHostController) 
     val devices = viewModel.scannedDevices
     val connectedDevice = viewModel.connectedDevice.value
     val context = LocalContext.current
+    var isScanning by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         if (PermissionsUtil.hasPermissions(context)) {
@@ -34,6 +38,30 @@ fun DeviceListScreen(viewModel: BleViewModel, navController: NavHostController) 
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("BLE Device Scanner") })
+        },
+        bottomBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Button(
+                    onClick = {
+                        isScanning = !isScanning
+                        if (isScanning) {
+                            viewModel.startScan()
+                        } else {
+                            viewModel.stopScan()
+                        }
+                    }
+                ) {
+                    Text(
+                        text = if (isScanning) "Stop Scanning" else "Start Scanning",
+                        fontSize = 18.sp
+                    )
+                }
+            }
         }
     ) { padding ->
         LazyColumn(modifier = Modifier.padding(padding)) {
