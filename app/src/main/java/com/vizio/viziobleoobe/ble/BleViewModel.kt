@@ -5,6 +5,7 @@ import android.app.Application
 import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
+import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
@@ -30,17 +31,21 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
             newState: Int
         ) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
+                Log.d("BleViewModel", "Connected to device: ${gatt.device.name} - ${gatt.device.address}")
                 connectedDevice.value = gatt.device
                 gatt.discoverServices()
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                Log.d("BleViewModel", "Disconnected from device: ${gatt.device.name} - ${gatt.device.address}")
                 connectedDevice.value = null
                 gattServices.value = emptyList()
             }
         }
+        @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(
             gatt: BluetoothGatt,
             status: Int
         ) {
+            Log.d("BleViewModel", "Services discovered for device: ${gatt.device.name} - ${gatt.device.address}")
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 gattServices.value = gatt.services
             }
@@ -52,11 +57,15 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
     fun stopScan() {
         bleManager.stopScan(scanCallback)
     }
+    @SuppressLint("MissingPermission")
     fun connectToDevice(device: BluetoothDevice) {
+        Log.d("BleViewModel", "Connecting to device: ${device.name} - ${device.address}")
         bleManager.connectToDevice(device, gattCallback)
         stopScan()
     }
+    @SuppressLint("MissingPermission")
     fun disconnectFromDevice() {
+        Log.d("BleViewModel", "Disconnecting from device: ${connectedDevice.value?.name} - ${connectedDevice.value?.address}")
         bleManager.disconnect()
         connectedDevice.value = null
         gattServices.value = emptyList()
