@@ -50,6 +50,34 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
                 gattServices.value = gatt.services
             }
         }
+
+        @SuppressLint("MissingPermission")
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
+        ) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.d("BleViewModel", "Characteristic read: ${characteristic.uuid} - ${characteristic.value?.contentToString()}")
+            } else {
+                Log.e("BleViewModel", "Failed to read characteristic: ${characteristic.uuid}, status: $status")
+            }
+        }
+
+        @SuppressLint("MissingPermission")
+        override fun onCharacteristicWrite(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
+        ) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.d("BleViewModel", "Characteristic written: ${characteristic.uuid} - ${characteristic.value?.contentToString()}")
+            } else {
+                Log.e("BleViewModel", "Failed to write characteristic: ${characteristic.uuid}, status: $status")
+            }
+        }
+
+
     }
     fun startScan() {
         bleManager.startScan(scanCallback)
