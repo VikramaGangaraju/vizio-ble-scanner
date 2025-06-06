@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Vizio Ble OOBE</string>
+    <string name="ble_device_scanner">BLE Device Scanner</string>
 </resources>
