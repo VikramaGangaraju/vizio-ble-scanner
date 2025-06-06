@@ -1,6 +1,7 @@
 package com.vizio.viziobleoobe.ui.screens
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import com.vizio.viziobleoobe.R
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.vizio.viziobleoobe.MainActivity
 import com.vizio.viziobleoobe.ble.BleViewModel
 import com.vizio.viziobleoobe.navigation.Screen
 import com.vizio.viziobleoobe.ui.components.DeviceItem
@@ -34,7 +36,10 @@ fun DeviceListScreen(viewModel: BleViewModel, navController: NavHostController) 
             viewModel.autoConnectToSavedDevice()
             viewModel.startScan()
         } else {
-            // Handle missing permission (e.g., show a message or request permission)
+            PermissionsUtil.requestPermissions(
+                context as Activity,
+                (context as MainActivity).getPermissionLauncher()
+            )
         }
     }
 

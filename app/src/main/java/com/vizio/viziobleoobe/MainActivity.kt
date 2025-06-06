@@ -19,28 +19,34 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var permissionLauncher: ActivityResultLauncher<Array<String>>
 
+    fun getPermissionLauncher(): ActivityResultLauncher<Array<String>> {
+        return permissionLauncher
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Register the permission launcher before the LifecycleOwner reaches STARTED state
         permissionLauncher = registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
         ) { permissions ->
-            // Handle the result map: permission -> granted
+            val allGranted = permissions.values.all { it }
+            if (allGranted) {
+                bleViewModel.startScan()
+            }
         }
 
         setContent {
             val context = this
             val navController = rememberNavController()
 
-            // Request permissions at startup if not granted
             LaunchedEffect(Unit) {
                 if (!PermissionsUtil.hasPermissions(context)) {
                     PermissionsUtil.requestPermissions(context as Activity, permissionLauncher)
+                } else {
+                    bleViewModel.startScan()
                 }
             }
 
-            // Launch your navigation graph
             AppNavGraph(navController = navController, viewModel = bleViewModel)
         }
     }
