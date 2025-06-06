@@ -30,11 +30,14 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
     private val gattCallback = object : BluetoothGattCallback() {
         @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+            Log.d("BleViewModel", "Connection state changed: status=$status, newState=$newState, device=${gatt.device.name} - ${gatt.device.address}")
             if (newState == BluetoothProfile.STATE_CONNECTED) {
+                Log.d("BleViewModel", "Device connected: ${gatt.device.name} - ${gatt.device.address}")
                 connectedDevice.value = gatt.device
                 saveConnectedDevice(gatt.device)
                 gatt.discoverServices()
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                Log.d("BleViewModel", "Device disconnected: ${gatt.device.name} - ${gatt.device.address}")
                 connectedDevice.value = null
                 gattServices.value = emptyList()
                 clearConnectedDevice()
@@ -50,12 +53,14 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun startScan() {
+        Log.d("BleViewModel", "Starting BLE scan")
         if (hasPermission(android.Manifest.permission.BLUETOOTH_SCAN)) {
             bleManager.startScan(scanCallback)
         }
     }
 
     fun stopScan() {
+        Log.d("BleViewModel", "Stopping BLE scan")
         if (hasPermission(android.Manifest.permission.BLUETOOTH_SCAN)) {
             bleManager.stopScan(scanCallback)
         }
@@ -87,11 +92,13 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
 
     @SuppressLint("MissingPermission")
     fun connectToDevice(device: BluetoothDevice) {
+        Log.d("BleViewModel", "Connecting to device: ${device.name} - ${device.address}")
         bleManager.connectToDevice(device, gattCallback)
     }
 
     @SuppressLint("MissingPermission")
     fun disconnectFromDevice() {
+        Log.d("BleViewModel", "Disconnecting from device: ${connectedDevice.value?.name} - ${connectedDevice.value?.address}")
         bleManager.disconnect()
         connectedDevice.value = null
         gattServices.value = emptyList()
@@ -100,6 +107,7 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
 
     @SuppressLint("MissingPermission")
     fun readCharacteristicValue(characteristic: BluetoothGattCharacteristic): String? {
+        Log.d("BleViewModel", "Reading characteristic value: ${characteristic.uuid}")
         val gatt = bleManager.getConnectedGatt()
         return if (gatt != null) {
             gatt.readCharacteristic(characteristic)
@@ -111,6 +119,7 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
 
     @SuppressLint("MissingPermission")
     private fun saveConnectedDevice(device: BluetoothDevice) {
+        Log.d("BleViewModel", "Saving connected device to preferences: ${device.name} - ${device.address}")
         sharedPreferences.edit().apply {
             putString("device_address", device.address)
             apply()
@@ -118,10 +127,12 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun clearConnectedDevice() {
+        Log.d("BleViewModel", "Clearing connected device from preferences")
         sharedPreferences.edit().clear().apply()
     }
 
     fun autoConnectToSavedDevice() {
+        Log.d("BleViewModel", "Attempting to auto-connect to saved device")
         val deviceAddress = sharedPreferences.getString("device_address", null)
         if (deviceAddress != null) {
             val bluetoothDevice = bleManager.getDeviceByAddress(deviceAddress)
@@ -140,6 +151,7 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun hasPermission(permission: String): Boolean {
+    Log.d("BleViewModel", "Checking permission: $permission")
         return ContextCompat.checkSelfPermission(getApplication(), permission) == PackageManager.PERMISSION_GRANTED
     }
 }
