@@ -70,7 +70,8 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
         @SuppressLint("MissingPermission")
         override fun onScanResult(callbackType: Int, result: android.bluetooth.le.ScanResult) {
             val device = result.device
-            if (!scannedDevices.any { it.address == device.address }) {
+            // Only add devices that broadcast a name
+            if (device.name != null && !scannedDevices.any { it.address == device.address }) {
                 scannedDevices.add(device)
             }
         }
@@ -79,7 +80,7 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
         override fun onBatchScanResults(results: List<android.bluetooth.le.ScanResult>) {
             results.forEach { result ->
                 val device = result.device
-                if (!scannedDevices.any { it.address == device.address }) {
+                if (device.name != null && !scannedDevices.any { it.address == device.address }) {
                     scannedDevices.add(device)
                 }
             }
