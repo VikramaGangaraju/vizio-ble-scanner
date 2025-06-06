@@ -1,6 +1,7 @@
 package com.vizio.viziobleoobe.ui.screens
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -40,6 +41,7 @@ fun DeviceDetailScreen(viewModel: BleViewModel, navController: NavHostController
             Text(text = "Connected to: ${device?.name ?: "Unnamed Device"}", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             LazyColumn {
+                Log.d("DeviceDetailScreen", "Displaying ${services.size} services for device: ${device?.name ?: "Unnamed Device"}")
                 items(services.size) { index ->
                     val service = services[index]
                     Column(modifier = Modifier.padding(vertical = 8.dp)) {

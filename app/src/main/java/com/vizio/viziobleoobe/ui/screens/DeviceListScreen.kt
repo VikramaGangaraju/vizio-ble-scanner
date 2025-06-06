@@ -29,6 +29,7 @@ fun DeviceListScreen(viewModel: BleViewModel, navController: NavHostController) 
 
     LaunchedEffect(Unit) {
         if (PermissionsUtil.hasPermissions(context)) {
+            viewModel.autoConnectToSavedDevice()
             viewModel.startScan()
         } else {
             // Handle missing permission (e.g., show a message or request permission)
