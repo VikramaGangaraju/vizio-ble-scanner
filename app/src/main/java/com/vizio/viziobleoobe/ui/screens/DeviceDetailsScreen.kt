@@ -2,7 +2,9 @@ package com.vizio.viziobleoobe.ui.screens
 
 import android.annotation.SuppressLint
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -25,6 +28,7 @@ import com.vizio.viziobleoobe.navigation.Screen
 fun DeviceDetailScreen(viewModel: BleViewModel, navController: NavHostController) {
     val device = viewModel.connectedDevice.value
     val services = viewModel.gattServices.value
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -78,7 +82,15 @@ fun DeviceDetailScreen(viewModel: BleViewModel, navController: NavHostController
                                         .background(
                                             if (charIndex % 2 == 0) Color(0xFFBBDEFB) else Color(0xFF90CAF9)
                                         )
-                                        .padding(8.dp),
+                                        .padding(8.dp)
+                                        .clickable {
+                                            val value = viewModel.readCharacteristicValue(characteristic)
+                                            Toast.makeText(
+                                                context,
+                                                "Value: $value",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        },
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
