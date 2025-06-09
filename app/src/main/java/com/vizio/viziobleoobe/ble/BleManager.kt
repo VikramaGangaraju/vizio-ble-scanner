@@ -31,7 +31,7 @@ class BleManager(private val context: Context) {
         gattCallback: BluetoothGattCallback
     ) {
         Log.d("BleManager", "Connecting to device: ${device.name} - ${device.address}")
-        bluetoothGatt = device.connectGatt(context, true, gattCallback)
+        bluetoothGatt = device.connectGatt(context, false, gattCallback)
     }
 
     @SuppressLint("MissingPermission")
