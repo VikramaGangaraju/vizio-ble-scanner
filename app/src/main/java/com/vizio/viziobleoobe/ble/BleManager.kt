@@ -52,9 +52,4 @@ class BleManager(private val context: Context) {
         return bluetoothGatt
     }
 
-    @SuppressLint("MissingPermission")
-    fun readCharacteristic(characteristic: BluetoothGattCharacteristic): Boolean {
-        Log.d("BleManager", "Reading characteristic: ${characteristic.uuid}")
-        return bluetoothGatt?.readCharacteristic(characteristic) ?: false
-    }
 }

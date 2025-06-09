@@ -29,6 +29,7 @@ fun DeviceDetailScreen(viewModel: BleViewModel, navController: NavHostController
     val device = viewModel.connectedDevice.value
     val services = viewModel.gattServices.value
     val context = LocalContext.current
+    val lastReadValue by viewModel.lastReadCharacteristicValue.collectAsState()
 
     Scaffold(
         topBar = {
@@ -84,12 +85,7 @@ fun DeviceDetailScreen(viewModel: BleViewModel, navController: NavHostController
                                         )
                                         .padding(8.dp)
                                         .clickable {
-                                            val value = viewModel.readCharacteristicValue(characteristic)
-                                            Toast.makeText(
-                                                context,
-                                                "Value: $value",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
+                                            viewModel.readCharacteristicValue(characteristic)
                                         },
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -103,6 +99,17 @@ fun DeviceDetailScreen(viewModel: BleViewModel, navController: NavHostController
                         }
                     }
                 }
+            }
+        }
+
+        // Display toast for the last read characteristic value
+        LaunchedEffect(lastReadValue) {
+            lastReadValue?.let {
+                Toast.makeText(
+                    context,
+                    "Value: $it",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }

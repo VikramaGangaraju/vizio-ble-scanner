@@ -14,13 +14,16 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class BleViewModel(application: Application) : AndroidViewModel(application) {
     private val bleManager = BleManager(application.applicationContext)
     val scannedDevices = mutableStateListOf<BluetoothDevice>()
     val connectedDevice = mutableStateOf<BluetoothDevice?>(null)
     val gattServices = mutableStateOf<List<BluetoothGattService>>(emptyList())
-
+    private val _lastReadCharacteristicValue = MutableStateFlow<String?>(null)
+    val lastReadCharacteristicValue: StateFlow<String?> = _lastReadCharacteristicValue
     private val sharedPreferences = application.getSharedPreferences("BlePreferences", Application.MODE_PRIVATE)
 
     init {
@@ -48,6 +51,30 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 gattServices.value = gatt.services
+            }
+        }
+
+        @SuppressLint("MissingPermission")
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
+        ) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                val value = characteristic.value?.let { String(it) } ?: "null"
+                _lastReadCharacteristicValue.value = value
+                Log.d("BleViewModel", "Characteristic read: ${characteristic.uuid}, value: $value")
+            } else {
+                Log.e("BleViewModel", "Failed to read characteristic: ${characteristic.uuid}, status: $status")
+            }
+        }
+
+        @SuppressLint("MissingPermission")
+        override fun onCharacteristicWrite(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.d("BleViewModel", "Characteristic written successfully: ${characteristic.uuid}")
+            } else {
+                Log.e("BleViewModel", "Failed to write characteristic: ${characteristic.uuid}, status: $status")
             }
         }
     }
@@ -107,14 +134,16 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     @SuppressLint("MissingPermission")
-    fun readCharacteristicValue(characteristic: BluetoothGattCharacteristic): String? {
+    fun readCharacteristicValue(characteristic: BluetoothGattCharacteristic) {
         Log.d("BleViewModel", "Reading characteristic value: ${characteristic.uuid}")
         val gatt = bleManager.getConnectedGatt()
-        return if (gatt != null) {
-            gatt.readCharacteristic(characteristic)
-            characteristic.value?.let { String(it) }
+        if (gatt != null) {
+            val success = gatt.readCharacteristic(characteristic)
+            if (!success) {
+                Log.e("BleViewModel", "Failed to initiate characteristic read: ${characteristic.uuid}")
+            }
         } else {
-            null
+            Log.e("BleViewModel", "No connected GATT instance available")
         }
     }
 
@@ -152,7 +181,7 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun hasPermission(permission: String): Boolean {
-    Log.d("BleViewModel", "Checking permission: $permission")
+        Log.d("BleViewModel", "Checking permission: $permission")
         return ContextCompat.checkSelfPermission(getApplication(), permission) == PackageManager.PERMISSION_GRANTED
     }
 }
