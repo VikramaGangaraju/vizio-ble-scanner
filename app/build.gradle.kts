@@ -55,6 +55,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.9.0") {
         exclude(group = "androidx.navigation", module = "navigation-compose-jvmstubs")
     }
+    implementation(libs.androidx.appcompat)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
