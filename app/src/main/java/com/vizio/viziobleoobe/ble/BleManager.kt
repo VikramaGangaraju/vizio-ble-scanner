@@ -41,7 +41,7 @@ class BleManager(private val context: Context) {
         bluetoothGatt?.close()
         bluetoothGatt = null
     }
-
+    // add comment to the end of the file
     fun getDeviceByAddress(address: String): BluetoothDevice? {
         Log.d("BleManager", "Getting device by address: $address")
         return bluetoothAdapter.getRemoteDevice(address)
