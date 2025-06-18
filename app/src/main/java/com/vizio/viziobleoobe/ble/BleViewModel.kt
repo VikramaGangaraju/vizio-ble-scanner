@@ -97,9 +97,11 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
         @SuppressLint("MissingPermission")
         override fun onScanResult(callbackType: Int, result: android.bluetooth.le.ScanResult) {
             val device = result.device
-            // Only add devices that broadcast a name
-            if (device.name != null && !scannedDevices.any { it.address == device.address }) {
+            if (!device.name.isNullOrEmpty()) {
+                // Add the device to the scannedDevices list with a returned device name.
                 scannedDevices.add(device)
+            } else {
+                Log.d("BleManager", "Skipping device with null name: ${device.address}")
             }
         }
 
