@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import java.util.UUID
 
 class BleViewModel(application: Application) : AndroidViewModel(application) {
     private val bleManager = BleManager(application.applicationContext)
@@ -33,14 +34,13 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
     private val gattCallback = object : BluetoothGattCallback() {
         @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
-            Log.d("BleViewModel", "Connection state changed: status=$status, newState=$newState, device=${gatt.device.name} - ${gatt.device.address}")
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                Log.d("BleViewModel", "Device connected: ${gatt.device.name} - ${gatt.device.address}")
+                Log.d("BleViewModel", "Connected to device: ${gatt.device.address}")
                 connectedDevice.value = gatt.device
                 saveConnectedDevice(gatt.device)
                 gatt.discoverServices()
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                Log.d("BleViewModel", "Device disconnected: ${gatt.device.name} - ${gatt.device.address}")
+                Log.d("BleViewModel", "Disconnected from device")
                 connectedDevice.value = null
                 gattServices.value = emptyList()
                 clearConnectedDevice()
@@ -51,19 +51,24 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 gattServices.value = gatt.services
+                gatt.services.forEach { service ->
+                    Log.d("BleViewModel", "Service discovered: ${service.uuid}")
+                    service.characteristics.forEach { characteristic ->
+                        Log.d("BleViewModel", "Characteristic discovered: ${characteristic.uuid}")
+                    }
+                }
+                readAllCharacteristics()
+            } else {
+                Log.e("BleViewModel", "Service discovery failed with status: $status")
             }
         }
 
         @SuppressLint("MissingPermission")
-        override fun onCharacteristicRead(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            status: Int
-        ) {
+        override fun onCharacteristicRead(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 val value = characteristic.value?.let { String(it) } ?: "null"
-                _lastReadCharacteristicValue.value = value
                 Log.d("BleViewModel", "Characteristic read: ${characteristic.uuid}, value: $value")
+                _lastReadCharacteristicValue.value = value
             } else {
                 Log.e("BleViewModel", "Failed to read characteristic: ${characteristic.uuid}, status: $status")
             }
@@ -79,15 +84,98 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    @SuppressLint("MissingPermission")
+    private fun readAllCharacteristics() {
+        val dpadValue = readCharacteristic(DPAD_INFO)
+        if (dpadValue != null) {
+            Log.d("BleViewModel", "DPAD_INFO Value: ${String(dpadValue)}")
+        } else {
+            Log.e("BleViewModel", "Failed to read DPAD_INFO")
+        }
+
+        val wifiPasswordValue = readCharacteristic(WIFI_PASSWORD)
+        if (wifiPasswordValue != null) {
+            Log.d("BleViewModel", "WIFI_PASSWORD Value: ${String(wifiPasswordValue)}")
+        } else {
+            Log.e("BleViewModel", "Failed to read WIFI_PASSWORD")
+        }
+
+        val tvStatusValue = readCharacteristic(TV_STATUS)
+        if (tvStatusValue != null) {
+            Log.d("BleViewModel", "TV_STATUS Value: ${String(tvStatusValue)}")
+        } else {
+            Log.e("BleViewModel", "Failed to read TV_STATUS")
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun readCharacteristic(uuid: UUID): ByteArray? {
+        val gatt = bleManager.getConnectedGatt()
+        if (gatt == null) {
+            Log.e("BleViewModel", "BluetoothGatt is null. Cannot read characteristic.")
+            return null
+        }
+
+        val service = gatt.getService(SERVICE_INFO)
+        if (service == null) {
+            Log.e("BleViewModel", "Service $SERVICE_INFO not found on device.")
+            return null
+        }
+
+        val characteristic = service.getCharacteristic(uuid)
+        if (characteristic == null) {
+            Log.e("BleViewModel", "Characteristic $uuid not found in service $SERVICE_INFO.")
+            return null
+        }
+
+        return if (gatt.readCharacteristic(characteristic)) {
+            characteristic.value
+        } else {
+            Log.e("BleViewModel", "Failed to initiate read for characteristic $uuid.")
+            null
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun writeCharacteristic(uuid: UUID, value: ByteArray): Boolean {
+        val gatt = bleManager.getConnectedGatt()
+        if (gatt == null) {
+            Log.e("BleViewModel", "BluetoothGatt is null. Cannot write characteristic.")
+            return false
+        }
+
+        val service = gatt.getService(SERVICE_INFO)
+        if (service == null) {
+            Log.e("BleViewModel", "Service $SERVICE_INFO not found on device.")
+            return false
+        }
+
+        val characteristic = service.getCharacteristic(uuid)
+        if (characteristic == null) {
+            Log.e("BleViewModel", "Characteristic $uuid not found in service $SERVICE_INFO.")
+            return false
+        }
+
+        characteristic.value = value
+        return if (gatt.writeCharacteristic(characteristic)) {
+            true
+        } else {
+            Log.e("BleViewModel", "Failed to write characteristic $uuid.")
+            false
+        }
+    }
+
+    fun writeDpadCommand(dpadSelection: BleTvDpadSelection): Boolean {
+        return writeCharacteristic(DPAD_INFO, byteArrayOf(dpadSelection.value.toByte()))
+    }
+
     fun startScan() {
-        Log.d("BleViewModel", "Starting BLE scan")
         if (hasPermission(android.Manifest.permission.BLUETOOTH_SCAN)) {
             bleManager.startScan(scanCallback)
         }
     }
 
     fun stopScan() {
-        Log.d("BleViewModel", "Stopping BLE scan")
         if (hasPermission(android.Manifest.permission.BLUETOOTH_SCAN)) {
             bleManager.stopScan(scanCallback)
         }
@@ -97,21 +185,8 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
         @SuppressLint("MissingPermission")
         override fun onScanResult(callbackType: Int, result: android.bluetooth.le.ScanResult) {
             val device = result.device
-            if (!device.name.isNullOrEmpty()) {
-                // Add the device to the scannedDevices list with a returned device name.
+            if (!device.name.isNullOrEmpty() && !scannedDevices.any { it.address == device.address }) {
                 scannedDevices.add(device)
-            } else {
-                Log.d("BleManager", "Skipping device with null name: ${device.address}")
-            }
-        }
-
-        @SuppressLint("MissingPermission")
-        override fun onBatchScanResults(results: List<android.bluetooth.le.ScanResult>) {
-            results.forEach { result ->
-                val device = result.device
-                if (device.name != null && !scannedDevices.any { it.address == device.address }) {
-                    scannedDevices.add(device)
-                }
             }
         }
 
@@ -122,68 +197,45 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
 
     @SuppressLint("MissingPermission")
     fun connectToDevice(device: BluetoothDevice) {
-        Log.d("BleViewModel", "Connecting to device: ${device.name} - ${device.address}")
         bleManager.connectToDevice(device, gattCallback)
     }
 
     @SuppressLint("MissingPermission")
     fun disconnectFromDevice() {
-        Log.d("BleViewModel", "Disconnecting from device: ${connectedDevice.value?.name} - ${connectedDevice.value?.address}")
         bleManager.disconnect()
         connectedDevice.value = null
         gattServices.value = emptyList()
         clearConnectedDevice()
     }
 
-    @SuppressLint("MissingPermission")
-    fun readCharacteristicValue(characteristic: BluetoothGattCharacteristic) {
-        Log.d("BleViewModel", "Reading characteristic value: ${characteristic.uuid}")
-        val gatt = bleManager.getConnectedGatt()
-        if (gatt != null) {
-            val success = gatt.readCharacteristic(characteristic)
-            if (!success) {
-                Log.e("BleViewModel", "Failed to initiate characteristic read: ${characteristic.uuid}")
-            }
-        } else {
-            Log.e("BleViewModel", "No connected GATT instance available")
-        }
-    }
-
-    @SuppressLint("MissingPermission")
     private fun saveConnectedDevice(device: BluetoothDevice) {
-        Log.d("BleViewModel", "Saving connected device to preferences: ${device.name} - ${device.address}")
-        sharedPreferences.edit().apply {
-            putString("device_address", device.address)
-            apply()
-        }
+        sharedPreferences.edit().putString("device_address", device.address).apply()
     }
 
     private fun clearConnectedDevice() {
-        Log.d("BleViewModel", "Clearing connected device from preferences")
         sharedPreferences.edit().clear().apply()
     }
 
     fun autoConnectToSavedDevice() {
-        Log.d("BleViewModel", "Attempting to auto-connect to saved device")
         val deviceAddress = sharedPreferences.getString("device_address", null)
         if (deviceAddress != null) {
             val bluetoothDevice = bleManager.getDeviceByAddress(deviceAddress)
             if (bluetoothDevice != null && hasPermission(android.Manifest.permission.BLUETOOTH_CONNECT)) {
-                if (gattCallback != null) { // Ensure gattCallback is not null
-                    bleManager.connectToDevice(bluetoothDevice, gattCallback)
-                } else {
-                    Log.e("BleViewModel", "gattCallback is null, cannot connect to device")
-                }
-            } else {
-                Log.e("BleViewModel", "Bluetooth device is null or missing permission")
+                bleManager.connectToDevice(bluetoothDevice, gattCallback)
             }
-        } else {
-            Log.d("BleViewModel", "No saved device to auto-connect")
         }
     }
 
     private fun hasPermission(permission: String): Boolean {
-        Log.d("BleViewModel", "Checking permission: $permission")
         return ContextCompat.checkSelfPermission(getApplication(), permission) == PackageManager.PERMISSION_GRANTED
     }
+
+    companion object {
+        val SERVICE_INFO: UUID = UUID.fromString("ea1979cf-5313-4152-a056-37619c1dA100")
+        val DPAD_INFO: UUID = UUID.fromString("ea1979cf-5313-4152-a056-37619c1dA101")
+        val WIFI_PASSWORD: UUID = UUID.fromString("ea1979cf-5313-4152-a056-37619c1dA102")
+        val TV_STATUS: UUID = UUID.fromString("ea1979cf-5313-4152-a056-37619c1dA103")
+    }
 }
+
+

@@ -5,7 +5,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.vizio.viziobleoobe.ble.BleViewModel
-import com.vizio.viziobleoobe.ui.screens.DeviceDetailScreen
+import com.vizio.viziobleoobe.ui.screens.DeviceControlScreen
+//import com.vizio.viziobleoobe.ui.screens.DeviceDetailScreen
 import com.vizio.viziobleoobe.ui.screens.DeviceListScreen
 
 @Composable
@@ -18,7 +19,7 @@ fun AppNavGraph(
             DeviceListScreen(viewModel = viewModel, navController = navController)
         }
         composable(Screen.DeviceDetail.route) {
-            DeviceDetailScreen(viewModel = viewModel, navController = navController)
+            DeviceControlScreen(viewModel = viewModel, navController = navController)
         }
     }
 }

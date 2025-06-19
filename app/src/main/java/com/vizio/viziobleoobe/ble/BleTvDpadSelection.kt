@@ -12,5 +12,4 @@ enum class BleTvDpadSelection(val value: Int) {
             return BleTvDpadSelection.entries.find { it.value == value }
         }
     }
-
 }
