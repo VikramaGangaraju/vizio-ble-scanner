@@ -197,6 +197,10 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
 
     @SuppressLint("MissingPermission")
     fun connectToDevice(device: BluetoothDevice) {
+        if (device == null) {
+            Log.e("BleViewModel", "BluetoothDevice is null. Cannot connect.")
+            return
+        }
         bleManager.connectToDevice(device, gattCallback)
     }
 
@@ -221,8 +225,16 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
         if (deviceAddress != null) {
             val bluetoothDevice = bleManager.getDeviceByAddress(deviceAddress)
             if (bluetoothDevice != null && hasPermission(android.Manifest.permission.BLUETOOTH_CONNECT)) {
-                bleManager.connectToDevice(bluetoothDevice, gattCallback)
+                if (gattCallback != null) {
+                    bleManager.connectToDevice(bluetoothDevice, gattCallback)
+                } else {
+                    Log.e("BleViewModel", "GattCallback is null. Cannot connect to device.")
+                }
+            } else {
+                Log.e("BleViewModel", "Failed to auto-connect. Device not found or permissions missing.")
             }
+        } else {
+            Log.e("BleViewModel", "No saved device address found.")
         }
     }
 
@@ -237,5 +249,3 @@ class BleViewModel(application: Application) : AndroidViewModel(application) {
         val TV_STATUS: UUID = UUID.fromString("ea1979cf-5313-4152-a056-37619c1dA103")
     }
 }
-
-

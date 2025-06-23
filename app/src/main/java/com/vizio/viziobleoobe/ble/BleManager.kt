@@ -30,6 +30,10 @@ class BleManager(private val context: Context) {
         device: BluetoothDevice,
         gattCallback: BluetoothGattCallback
     ) {
+        if (gattCallback == null) {
+            Log.e("BleManager", "GattCallback is null. Cannot connect to device.")
+            return
+        }
         Log.d("BleManager", "Connecting to device: ${device.name} - ${device.address}")
         bluetoothGatt = device.connectGatt(context, false, gattCallback)
     }
@@ -41,7 +45,7 @@ class BleManager(private val context: Context) {
         bluetoothGatt?.close()
         bluetoothGatt = null
     }
-    // add comment to the end of the file
+
     fun getDeviceByAddress(address: String): BluetoothDevice? {
         Log.d("BleManager", "Getting device by address: $address")
         return bluetoothAdapter.getRemoteDevice(address)
@@ -51,5 +55,4 @@ class BleManager(private val context: Context) {
         Log.d("BleManager", "Getting connected GATT instance")
         return bluetoothGatt
     }
-
 }
